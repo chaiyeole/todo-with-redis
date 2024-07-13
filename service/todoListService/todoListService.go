@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/chaiyeole/todo/domain"
-	"github.com/chaiyeole/todo/repository"
+	repository "github.com/chaiyeole/todo/repository/redis"
 )
 
 type store struct {

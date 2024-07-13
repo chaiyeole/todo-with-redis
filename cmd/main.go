@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/chaiyeole/todo/config"
-	"github.com/chaiyeole/todo/repository"
+	repository "github.com/chaiyeole/todo/repository/redis"
 	"github.com/chaiyeole/todo/service/todoListService"
 	"github.com/chaiyeole/todo/transport/http"
 )
