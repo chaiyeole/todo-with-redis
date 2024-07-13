@@ -19,10 +19,11 @@ type ConfigRedis struct {
 }
 
 type ConfigHTTP struct {
-	Localhost string `yaml:"localhost"`
+	Host string `yaml:"host"`
 }
 
-func ConfigReader() (*Config, error) {
+// New return new config
+func New() (*Config, error) {
 	configFileData, err := os.ReadFile("config.yaml")
 	if err != nil {
 		slog.Error("Error while reading config file", "err", err)
@@ -40,5 +41,4 @@ func ConfigReader() (*Config, error) {
 	}
 
 	return config, nil
-
 }

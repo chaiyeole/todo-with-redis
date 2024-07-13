@@ -4,4 +4,4 @@ redis:
   DB: 0
 
 http:
-  localhost: localhost:8080
+  host: localhost:8080

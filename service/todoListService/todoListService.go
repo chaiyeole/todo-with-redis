@@ -5,65 +5,50 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
-	"sync"
 
 	"github.com/chaiyeole/todo/domain"
 	repository "github.com/chaiyeole/todo/repository/redis"
 )
 
 type store struct {
-	repo  repository.IFileRepo
-	mutex sync.Mutex
+	repo repository.IFileRepo
 }
 
 func New(repo repository.IFileRepo) (domain.ITask, error) {
-
 	store := store{
 		repo: repo,
-		mutex: sync.Mutex{},
 	}
 
 	return &store, nil
 }
 
-func (s *store) Get(ctx context.Context, getReq *domain.GetReq) (*domain.GetRes, *domain.CustomError) {
-	idString := getReq.Id.String()
-	if (idString) == "" {
-		err := errors.New("error UUID")
-
-		slog.Error("Error while parsing UUID in API", "err", err)
-
-		return nil, &domain.CustomError{
-			StatusCode: http.StatusBadRequest,
-			ErrMsg:     "Error while parsing UUID in API",
-		}
-	}
-
-	task, err := s.repo.Get(ctx, getReq.Id.String())
+// GetTask takes context and pointer to id ; returns pointer to task and pointer to customError ; implements domain.ITask.
+func (s *store) GetTask(ctx context.Context, getTaskReq *domain.GetTaskReq) (*domain.GetTaskRes, *domain.CustomError) {
+	task, err := s.repo.Get(ctx, getTaskReq.Id.String())
 	if err != nil {
 		return nil, err
 	}
 
-	return &domain.GetRes{
+	return &domain.GetTaskRes{
 		Task: *task,
 	}, nil
 }
 
-// Get implements domain.ITask.
-func (s *store) GetAll(ctx context.Context) (*domain.GetAllRes, *domain.CustomError) {
+// GetAllTasks takes context ; returns pointer to a struct of all tasks and pointer to customError ; implements domain.ITask.
+func (s *store) GetAllTasks(ctx context.Context) (*domain.GetAllTasksRes, *domain.CustomError) {
 	taskList, err := s.repo.Load(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return &domain.GetAllRes{
+	return &domain.GetAllTasksRes{
 		Task: taskList,
 	}, nil
 }
 
-// Set implements domain.ITask.
-func (s *store) Set(ctx context.Context, setReq *domain.SetReq) (*domain.SetRes, *domain.CustomError) {
-	idString := setReq.Task.Id.String()
+// Set takes context and task ; returns pointer to the same task and pointer to customeError ; implements domain.ITask.
+func (s *store) SetTask(ctx context.Context, setTaskReq *domain.SetTaskReq) (*domain.SetTaskRes, *domain.CustomError) {
+	idString := setTaskReq.Task.Id.String()
 	if (idString) == "" {
 		err := errors.New("error UUID")
 
@@ -75,13 +60,13 @@ func (s *store) Set(ctx context.Context, setReq *domain.SetReq) (*domain.SetRes,
 		}
 	}
 
-	err := s.repo.Set(ctx, setReq.Task.Id.String(), setReq.Task)
+	err := s.repo.Set(ctx, setTaskReq.Task.Id.String(), setTaskReq.Task)
 	if err != nil {
 		return nil, err
 	}
 
-	return &domain.SetRes{
-		Task: setReq.Task,
+	return &domain.SetTaskRes{
+		Task: setTaskReq.Task,
 	}, nil
 }
 

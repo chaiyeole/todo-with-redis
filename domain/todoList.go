@@ -8,28 +8,28 @@ import (
 )
 
 type ITask interface {
-	GetAll(ctx context.Context) (*GetAllRes, *CustomError)
-	Get(ctx context.Context, getReq *GetReq) (*GetRes, *CustomError)
-	Set(ctx context.Context, setReq *SetReq) (*SetRes, *CustomError)
+	GetAllTasks(ctx context.Context) (*GetAllTasksRes, *CustomError)
+	GetTask(ctx context.Context, getReq *GetTaskReq) (*GetTaskRes, *CustomError)
+	SetTask(ctx context.Context, setReq *SetTaskReq) (*SetTaskRes, *CustomError)
 }
 
-type GetReq struct {
+type GetTaskReq struct {
 	Id uuid.UUID
 }
 
-type GetRes struct {
+type GetTaskRes struct {
 	Task models.Task
 }
 
-type SetReq struct {
+type SetTaskReq struct {
 	Task models.Task
 }
 
-type SetRes struct {
+type SetTaskRes struct {
 	Task models.Task
 }
 
-type GetAllRes struct {
+type GetAllTasksRes struct {
 	Task []models.Task
 }
 

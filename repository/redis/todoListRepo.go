@@ -1,4 +1,4 @@
-package repository
+package redisRepository
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/chaiyeole/todo/config"
 	"github.com/chaiyeole/todo/domain"
 	"github.com/chaiyeole/todo/models"
 	"github.com/redis/go-redis/v9"
@@ -21,11 +22,12 @@ type repo struct {
 	rdb *redis.Client
 }
 
-func New(addr string, password string, db int) (IFileRepo, error) {
+// New takes config ; returns fileRepo (a redis client) and error
+func New(config config.Config) (IFileRepo, error) {
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     addr,
-		Password: password, // no password set
-		DB:       db,       // use default DB
+		Addr:     config.ConfigRedis.Addr,
+		Password: config.ConfigRedis.Password, // no password set
+		DB:       config.ConfigRedis.DB,       // use default DB
 	})
 
 	// check if connection is success or not by ping function
@@ -44,6 +46,7 @@ func New(addr string, password string, db int) (IFileRepo, error) {
 	}, nil
 }
 
+// Load takes context ; returns a list of tasks and pointer to customError ; implements IFileRepo interface
 func (r *repo) Load(ctx context.Context) ([]models.Task, *domain.CustomError) {
 	redisResponse := r.rdb.Keys(ctx, "*")
 	keys, err := redisResponse.Result()
@@ -86,8 +89,8 @@ func (r *repo) Load(ctx context.Context) ([]models.Task, *domain.CustomError) {
 	return taskList, nil
 }
 
+// Set takes context, id, and task ; returns pointer to customeError ; implements IFileRepo interface
 func (r *repo) Set(ctx context.Context, id string, task models.Task) *domain.CustomError {
-	// individual set requests
 	jsonTask, err := json.Marshal(task)
 	if err != nil {
 		slog.Error("Error while marshalling task during set in redis", "err", err)
@@ -111,6 +114,7 @@ func (r *repo) Set(ctx context.Context, id string, task models.Task) *domain.Cus
 	return nil
 }
 
+// Get takes context and id ; returns pointer to task and pointer to customError
 func (r *repo) Get(ctx context.Context, id string) (*models.Task, *domain.CustomError) {
 	redisResponse := r.rdb.Get(ctx, id)
 

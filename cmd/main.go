@@ -2,23 +2,24 @@ package main
 
 import (
 	"github.com/chaiyeole/todo/config"
-	repository "github.com/chaiyeole/todo/repository/redis"
+	redisRepository "github.com/chaiyeole/todo/repository/redis"
 	"github.com/chaiyeole/todo/service/todoListService"
 	"github.com/chaiyeole/todo/transport/http"
 )
 
 func main() {
-	config, err := config.ConfigReader()
+	// function name
+	config, err := config.New()
+	if err != nil {
+		return
+	}
+	// padh ke samajh aa jana chahiye
+	newRedisRepo, err := redisRepository.New(*config)
 	if err != nil {
 		return
 	}
 
-	newRepo, err := repository.New(config.ConfigRedis.Addr, config.ConfigRedis.Password, config.ConfigRedis.DB)
-	if err != nil {
-		return
-	}
-
-	tasks, err := todoListService.New(newRepo)
+	tasks, err := todoListService.New(newRedisRepo)
 	if err != nil {
 		return
 	}
@@ -26,10 +27,12 @@ func main() {
 	svr := http.NewServer()
 
 	http.InitHandlers(svr, tasks)
-
-	err = http.RunServer(svr, config.ConfigHTTP.Localhost)
+	// there is always only one host
+	err = http.RunServer(svr, config.ConfigHTTP.Host)
 	if err != nil {
 		return
 	}
 
 }
+
+// git remote add origin URL

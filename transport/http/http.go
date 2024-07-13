@@ -7,6 +7,7 @@ import (
 
 	"github.com/chaiyeole/todo/domain"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type taskHandler struct {
@@ -17,8 +18,8 @@ func NewServer() *gin.Engine {
 	return gin.Default()
 }
 
-func RunServer(svr *gin.Engine, localhost string) error {
-	addr := localhost
+func RunServer(svr *gin.Engine, host string) error {
+	addr := host
 
 	err := svr.Run(addr)
 	if err != nil {
@@ -59,63 +60,76 @@ func InitHandlers(svr *gin.Engine, tasks domain.ITask) {
 	}
 
 	svr.Use(errorMiddleware())
+	// REST API verbs are self-explainatory; verbs need not be present in the path.
+	// path should only convey the resource (URL) one or many ; if one, which one,
+	svr.GET("/tasks", h.getAllTasks)
 
-	svr.GET("/getAll", h.getAll)
+	svr.GET("/tasks/:id", h.getTask)
 
-	svr.GET("/get", h.get)
-
-	svr.POST("/set", h.set)
+	svr.POST("/tasks", h.setTask)
 }
 
-func (h *taskHandler) getAll(ctx *gin.Context) {
-	getAllRes, err := h.tasks.GetAll(ctx)
+// paths should be self-explainable about what they do and what they will give back
+
+func (h *taskHandler) getAllTasks(ctx *gin.Context) {
+	getAllTasksRes, err := h.tasks.GetAllTasks(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, nil)
 
 		return
 	}
 
-	ctx.JSON(http.StatusOK, getAllRes.Task)
+	ctx.JSON(http.StatusOK, getAllTasksRes.Task)
 }
 
-func (h *taskHandler) get(ctx *gin.Context) {
-	getReq := new(domain.GetReq)
+func (h *taskHandler) getTask(ctx *gin.Context) {
+	getTaskReq := new(domain.GetTaskReq)
 
 	// layer wise validation: based on design; try to validate on the earliest level.
 
-	err := ctx.BindJSON(&getReq)
+	id := ctx.Param("id")
+	UUID, err := uuid.Parse(id)
 	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
+		slog.Error("Error while parsing string as UUID in API", "err", err)
 
 		return
 	}
 
-	getRes, customErr := h.tasks.Get(ctx, getReq)
+	getTaskReq.Id = UUID
+
+	getTaskRes, customErr := h.tasks.GetTask(ctx, getTaskReq)
 	if customErr != nil {
 		ctx.AbortWithError(http.StatusBadRequest, customErr)
 
 		return
 	}
 
-	ctx.JSON(http.StatusOK, &getRes)
+	ctx.JSON(http.StatusOK, &getTaskRes)
 }
 
-func (h *taskHandler) set(ctx *gin.Context) {
-	setReq := new(domain.SetReq)
+func (h *taskHandler) setTask(ctx *gin.Context) {
+	setTaskReq := new(domain.SetTaskReq)
 
-	err := ctx.BindJSON(&setReq.Task)
+	err := ctx.BindJSON(&setTaskReq.Task)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 
 		return
 	}
 
-	setRes, customErr := h.tasks.Set(ctx, setReq)
+	if setTaskReq.Task.Id.String() == "" {
+		err := errors.New("error UUID")
+		slog.Error("Error while parsing UUID in API", "err", err)
+
+		return
+	}
+
+	setTaskRes, customErr := h.tasks.SetTask(ctx, setTaskReq)
 	if customErr != nil {
 		ctx.AbortWithError(http.StatusBadRequest, customErr)
 
 		return
 	}
 
-	ctx.JSON(http.StatusOK, setRes)
+	ctx.JSON(http.StatusOK, setTaskRes)
 }
